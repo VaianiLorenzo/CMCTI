@@ -6,8 +6,9 @@ from comet_ml import Experiment
 
 from models.model import MAMI_binary_model
 from models.vb_model import MAMI_vb_binary_model
+from models.multitask_model import MAMI_multitask_model
 from utils.config import get_cfg_defaults
-from utils.training import train_model
+from utils.training import train_model, train_multitask_model
 
 
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -42,6 +43,10 @@ if __name__ == "__main__":
     elif cfg.MODEL.TYPE == "visual_bert":
         model = MAMI_vb_binary_model(device=device, class_modality=cfg.MODEL.CLASS_MODALITY,
                                      maskr_modality=cfg.MODEL.MASKR_MODALITY)
+    elif cfg.MODEL.TYPE == "multitask":
+        model = MAMI_multitask_model(device=device, class_modality=cfg.MODEL.CLASS_MODALITY,
+                                     maskr_modality=cfg.MODEL.MASKR_MODALITY)
+
     # Create checkpoint directory if it does not exist
     path_dir_checkpoint = os.path.join("data", f"checkpoints_{cfg.MODEL.TYPE}")
     if not os.path.isdir(path_dir_checkpoint):
@@ -61,6 +66,11 @@ if __name__ == "__main__":
                 cfg.TRAINING.GAMMA) + " - step_size: " + str(
                 percentage_epochs_per_step * cfg.TRAINING.EPOCHS) + " epochs\n")
 
-    train_model(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
-                scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
-                path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)
+    if cfg.MODEL.TYPE == "base" or cfg.MODEL.TYPE == "visual_bert":
+        train_model(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
+                    scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
+                    path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)
+    elif cfg.MODEL.TYPE == "multitask":
+        train_multitask_model(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
+                    scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
+                    path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)
