@@ -11,12 +11,14 @@ class MLP(nn.Module):
         self.input_fc = nn.Linear(input_dim, self.hidden_dim)
         self.output_fc = nn.Linear(self.hidden_dim, output_dim)
 
+        self.output_dim = output_dim
+
         self.dropout = nn.Dropout(dropout_value)
 
     def forward(self, x):
         h_1 = F.relu(self.input_fc(x))
 
-        # no final sigmoid because alredy in the BCE loss function
+        # in case of binary classification ther is no final sigmoid because alredy in the BCE loss function
         y_pred = self.output_fc(h_1)
 
         return y_pred
