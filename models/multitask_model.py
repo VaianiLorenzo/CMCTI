@@ -58,7 +58,7 @@ class MAMI_multitask_model(nn.Module):
         self.binary_classification_head = MLP(input_dim=768, output_dim=1)
         self.binary_classification_head = self.binary_classification_head.to(self.device)
 
-        self.misogyny_source_classification_head = MLP(input=768, output_dim = 5)
+        self.misogyny_source_classification_head = MLP(input_dim=768, output_dim = 5)
         self.misogyny_source_classification_head = self.misogyny_source_classification_head.to(device)
 
 
@@ -117,17 +117,19 @@ class MAMI_multitask_model(nn.Module):
 
         if self.class_modality == "cls":
             cls_out_embeddings = outputs_embeddings[:, 0]
-            predictions = torch.flatten(self.mlp(cls_out_embeddings))
+            binary_predictions = torch.flatten(self.binary_classification_head(cls_out_embeddings))
+            source_modality_predictions = torch.flatten(self.misogyny_source_classification_head(cls_out_embeddings))
+
         else:
             l = []
             for i in range(len(outputs_embeddings)):
                 average = self.global_average_pooling(outputs_embeddings[i])
                 l.append(average)
             out_embedding_avg = torch.stack(l)
+            binary_predictions = torch.flatten(self.binary_classification_head(out_embedding_avg))
+            source_modality_predictions = torch.flatten(self.misogyny_source_classification_head(out_embedding_avg))
 
-            predictions = torch.flatten(self.mlp(out_embedding_avg))
-
-        return predictions
+        return binary_predictions, source_modality_predictions
 
     def calculate_feats_patches(self, model, x_image):
         visual_embeds = []

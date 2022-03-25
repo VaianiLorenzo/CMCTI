@@ -16,7 +16,7 @@ _C.DATALOADER.N_WORKERS = 4
 _C.DATALOADER.PERCENTAGE_TRAIN = 0.75
 
 _C.MODEL = CN()
-_C.MODEL.TYPE = "visual_bert"  # base - visual_bert
+_C.MODEL.TYPE = "multitask"  # base - visual_bert
 _C.MODEL.BASELINE_MODALITY = "multimodal"  # image - text
 _C.MODEL.CLASS_MODALITY = "cls"  # "VisualBERT Classification Modality (cls or avg)"
 _C.MODEL.MASKR_MODALITY = "coco"  # "VisualBERT MASK R-CNN Modality (coco, lvis or both)"

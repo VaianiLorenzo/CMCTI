@@ -17,8 +17,10 @@ from utils.collate_functions import base_collate_fn, base_test_collate_fn, vb_co
 from utils.utils import read_dataloaders_config
 
 path_output_dir = os.path.join("data", "dataloaders")
-path_train_dataset = os.path.join("data", "TRAINING", "training.csv")
-path_test_dataset = os.path.join("data", "test", "test.csv")
+
+#path_train_dataset = os.path.join("..", "MAMI", "TRAINING", "training.csv")
+path_train_dataset = os.path.join("data", "training_multitask_small.csv")
+path_test_dataset = os.path.join("..", "MAMI", "test", "Test.csv")
 
 # Always use the same train/validation split
 random_state = 1995
@@ -39,6 +41,25 @@ def load_data(path_dataset):
 
     return names, text, misogynous
 
+def load_multitask_data(path_dataset):
+    df = pd.read_csv(path_dataset, sep=";")
+    df = df.sample(frac=1, random_state=random_state)
+    names = list(df["file_name"])
+    misogynous = list(df['misogynous'])
+    '''
+    shaming = list(df['shaming'])
+    stereotype = list(df['stereotype'])
+    objectification = list(df['objectification'])
+    violence = list(df['violence'])
+    '''
+    text = list(df["Text Transcription"])
+
+    text_only = list(df["text"])
+    image_only = list(df["image"])
+    either = list(df["either"])
+    both = list(df["both"])
+
+    return names, text, misogynous, text_only, image_only, either, both
 
 if __name__ == "__main__":
     cfg = read_dataloaders_config()
@@ -47,7 +68,8 @@ if __name__ == "__main__":
     if not os.path.isdir(path_output_dir):
         os.mkdir(path_output_dir)
 
-    names, text, misogynous = load_data(path_train_dataset)
+    #names, text, misogynous = load_data(path_train_dataset)
+    names, text, misogynous, text_only, image_only, either, both = load_multitask_data(path_train_dataset)
 
     if cfg.MODEL.TYPE == "base":
         text_model_name = "bert-base-cased"
@@ -78,10 +100,11 @@ if __name__ == "__main__":
     train_source_modality_label = []
 
     for i in tqdm(range(int(len(names) * cfg.DATALOADER.PERCENTAGE_TRAIN))):
-        train_image_path.append(os.path.join("data", "TRAINING", names[i]))
+        train_image_path.append(os.path.join("..", "MAMI", "TRAINING", names[i]))
         train_text.append(text[i])
         train_binary_label.append(misogynous[i])
-        train_source_modality_label.append(...)
+        #train_source_modality_label.append(...)
+        train_source_modality_label.append(text_only[i] + image_only[i]*2 + either[i]*3 + both[i]*4)
 
     if cfg.MODEL.TYPE == "base":
         train_dataloader = MAMI_binary_dataset(train_text, train_image_path, text_tokenizer, train_binary_label,
@@ -111,10 +134,11 @@ if __name__ == "__main__":
     val_source_modality_label = []
 
     for i in tqdm(range(int(len(names) * cfg.DATALOADER.PERCENTAGE_TRAIN), len(names), 1)):
-        val_image_path.append(os.path.join("data", "TRAINING", names[i]))
+        val_image_path.append(os.path.join("..", "MAMI", "TRAINING", names[i]))
         val_text.append(text[i])
         val_binary_label.append(misogynous[i])
-        val_source_modality_label.append(...)
+        #val_source_modality_label.append(...)
+        train_source_modality_label.append(text_only[i] + image_only[i] * 2 + either[i] * 3 + both[i] * 4)
 
     if cfg.MODEL.TYPE == "base":
         val_dataloader = MAMI_binary_dataset(val_text, val_image_path, text_tokenizer, val_binary_label,
