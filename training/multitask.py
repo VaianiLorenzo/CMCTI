@@ -7,6 +7,7 @@ from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss
 from tqdm import tqdm
 
 from utils.metrics import binary_acc
+import torch.nn.functional as F
 
 
 def _do_epoch(device, model, dataloader, train=False, optimizer=None, scheduler=None):
@@ -49,8 +50,22 @@ def _do_epoch(device, model, dataloader, train=False, optimizer=None, scheduler=
 
         # compute loss
         binary_loss = binary_loss_function(out_binary, binary_targets)
+        print("\tBL", binary_loss)
         source_modality_loss = source_modality_loss_function(out_source, source_modality_targets)
-        loss = binary_loss + source_modality_loss
+        print("\tML", source_modality_loss)
+
+        binary_pred = torch.round(torch.sigmoid(out_binary))
+        source_prob = F.softmax(out_source, dim=1)
+        source_pred = [sp.tolist().index(max(sp.tolist())) for sp in source_prob]
+        consistency_loss = 0
+        for b_pred, s_pred in zip(binary_pred, source_pred):
+            if (b_pred == 0 and s_pred > 0) or (b_pred > 0 and s_pred == 0):
+                consistency_loss += 1
+        consistency_loss = consistency_loss / len(binary_pred)
+        print("\tCL", consistency_loss)
+
+        loss = binary_loss + source_modality_loss + consistency_loss
+        print("LOSS:", loss)
 
         if train:
             # Perform backward pass

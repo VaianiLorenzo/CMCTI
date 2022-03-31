@@ -23,7 +23,8 @@ path_output_dir = os.path.join("data", "dataloaders")
 if __name__ == "__main__":
     cfg = get_cfg_defaults()
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = "cpu"
 
     experiment = None
     if cfg.COMET.ENABLED:

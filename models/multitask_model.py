@@ -29,7 +29,8 @@ class MAMI_multitask_model(nn.Module):
             cfg = get_cfg()
             cfg.merge_from_file(model_zoo.get_config_file(cfg_path))
             cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # ROI HEADS SCORE THRESHOLD
-            # cfg['MODEL']['DEVICE'] = 'cpu' # if you are not using cuda
+            if device == "cpu":
+                cfg['MODEL']['DEVICE'] = 'cpu' # if you are not using cuda
             cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(cfg_path)
 
             self.maskr_coco = build_model(cfg)
@@ -44,7 +45,8 @@ class MAMI_multitask_model(nn.Module):
             cfg = get_cfg()
             cfg.merge_from_file(model_zoo.get_config_file(cfg_path))
             cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # ROI HEADS SCORE THRESHOLD
-            # cfg['MODEL']['DEVICE'] = 'cpu' # if you are not using cuda
+            if device == "cpu":
+                cfg['MODEL']['DEVICE'] = 'cpu'
             cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(cfg_path)
 
             self.maskr_lvis = build_model(cfg)
@@ -134,6 +136,8 @@ class MAMI_multitask_model(nn.Module):
 
         inputs = []
         for path in x_image:
+            path = "../MAMI/" + path[5:]
+            print(path)
             image = cv2.imread(path)
             height, width = image.shape[:2]
             image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))

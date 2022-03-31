@@ -5,10 +5,12 @@ from yacs.config import CfgNode as CN
 _C = CN()
 
 _C.PATH = CN()
-_C.PATH.DIR_PROJECT = "."
-_C.PATH.DIR_DATA = os.path.join(_C.PATH.DIR_PROJECT, "data")
-_C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "TRAINING", "training-multitask.csv")
-_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "test", "test.csv")
+#_C.PATH.DIR_PROJECT = "."
+#_C.PATH.DIR_DATA = os.path.join("data")
+#_C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "training_multitask_small.csv")
+#_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "MAMI", "test", "Test.csv")
+_C.PATH.FILE_TRAIN_DATASET = os.path.join("data", "training_multitask_small.csv")
+_C.PATH.FILE_TEST_DATASET = os.path.join("..", "MAMI", "test", "Test.csv")
 
 _C.COMET = CN()
 _C.COMET.ENABLED = False
@@ -17,8 +19,8 @@ _C.COMET.PROJECT_NAME = "mami"
 _C.COMET.WORKSPACE = "vaianilorenzo"
 
 _C.DATALOADER = CN()
-_C.DATALOADER.BATCH_SIZE = 16
-_C.DATALOADER.N_WORKERS = 4
+_C.DATALOADER.BATCH_SIZE = 4
+_C.DATALOADER.N_WORKERS = 1
 _C.DATALOADER.PERCENTAGE_TRAIN = 0.75
 
 _C.MODEL = CN()

@@ -53,7 +53,7 @@ def read_csv_data(path_dataset, random_state=None):
     source = np.zeros((len(df), 5))
     for i in range(len(df)):
         row = df.iloc[i]
-        label = row["text"] * 1 + row["image"] * 2 + row["either"] * 3 + row["both"]
+        label = row["text"] * 1 + row["image"] * 2 + row["either"] * 3 + row["both"] * 4
         source[i, label] = 1
 
     return names, text, misogynous, source
