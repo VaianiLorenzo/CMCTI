@@ -55,11 +55,11 @@ class MAMI_multitask_model(nn.Module):
             self.maskr_lvis = None
 
         # instantiate MLPs
-        self.binary_classification_head = MLP(input_dim=768, output_dim=1)
-        self.binary_classification_head = self.binary_classification_head.to(self.device)
+        self.binary_classifier = MLP(input_dim=768, output_dim=1)
+        self.binary_classifier = self.binary_classifier.to(self.device)
 
-        self.misogyny_source_classification_head = MLP(input=768, output_dim = 5)
-        self.misogyny_source_classification_head = self.misogyny_source_classification_head.to(device)
+        self.source_classifier = MLP(input_dim=768, output_dim=5)
+        self.source_classifier = self.source_classifier.to(device)
 
 
     def forward(self, x_text, x_image):
@@ -116,18 +116,18 @@ class MAMI_multitask_model(nn.Module):
         outputs_embeddings = outputs.last_hidden_state
 
         if self.class_modality == "cls":
-            cls_out_embeddings = outputs_embeddings[:, 0]
-            predictions = torch.flatten(self.mlp(cls_out_embeddings))
+            out_embeddings = outputs_embeddings[:, 0]
         else:
-            l = []
+            list_embed = []
             for i in range(len(outputs_embeddings)):
                 average = self.global_average_pooling(outputs_embeddings[i])
-                l.append(average)
-            out_embedding_avg = torch.stack(l)
+                list_embed.append(average)
+            out_embeddings = torch.stack(list_embed)
 
-            predictions = torch.flatten(self.mlp(out_embedding_avg))
+        binary_pred = self.binary_classifier(out_embeddings)
+        source_pred = self.source_classifier(out_embeddings)
 
-        return predictions
+        return binary_pred, source_pred
 
     def calculate_feats_patches(self, model, x_image):
         visual_embeds = []

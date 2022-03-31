@@ -4,6 +4,12 @@ from yacs.config import CfgNode as CN
 
 _C = CN()
 
+_C.PATH = CN()
+_C.PATH.DIR_PROJECT = "."
+_C.PATH.DIR_DATA = os.path.join(_C.PATH.DIR_PROJECT, "data")
+_C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "TRAINING", "training-multitask.csv")
+_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "test", "test.csv")
+
 _C.COMET = CN()
 _C.COMET.ENABLED = False
 _C.COMET.API_KEY = "LiMIt9D5WsCZo294IIYymGhdv"
@@ -16,7 +22,7 @@ _C.DATALOADER.N_WORKERS = 4
 _C.DATALOADER.PERCENTAGE_TRAIN = 0.75
 
 _C.MODEL = CN()
-_C.MODEL.TYPE = "visual_bert"  # base - visual_bert
+_C.MODEL.TYPE = "multitask"  # base - visual_bert - multitask
 _C.MODEL.BASELINE_MODALITY = "multimodal"  # image - text
 _C.MODEL.CLASS_MODALITY = "cls"  # "VisualBERT Classification Modality (cls or avg)"
 _C.MODEL.MASKR_MODALITY = "coco"  # "VisualBERT MASK R-CNN Modality (coco, lvis or both)"

@@ -8,8 +8,8 @@ from models.model import MAMI_binary_model
 from models.vb_model import MAMI_vb_binary_model
 from models.multitask_model import MAMI_multitask_model
 from utils.config import get_cfg_defaults
-from utils.training import train_model, train_multitask_model
-
+from training.binary import train_model as train_binary
+from training.multitask import train_model as train_multitask
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 
@@ -62,15 +62,16 @@ if __name__ == "__main__":
     # Init training log file
     with open("log_file.txt", "a+") as f:
         f.write(
-            "START TRAINING - " + str(cfg.TRAINING.EPOCHS) + " epochs - LR: " + str(cfg.TRAINING.LR) + " - gamma: " + str(
+            "START TRAINING - " + str(cfg.TRAINING.EPOCHS) + " epochs - LR: " + str(
+                cfg.TRAINING.LR) + " - gamma: " + str(
                 cfg.TRAINING.GAMMA) + " - step_size: " + str(
                 percentage_epochs_per_step * cfg.TRAINING.EPOCHS) + " epochs\n")
 
     if cfg.MODEL.TYPE == "base" or cfg.MODEL.TYPE == "visual_bert":
-        train_model(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
-                    scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
-                    path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)
+        train_binary(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
+                     scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
+                     path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)
     elif cfg.MODEL.TYPE == "multitask":
-        train_multitask_model(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
-                    scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
-                    path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)
+        train_multitask(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
+                        scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
+                        path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)

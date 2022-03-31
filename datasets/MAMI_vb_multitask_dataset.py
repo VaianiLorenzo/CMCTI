@@ -2,6 +2,7 @@ import torch.utils.data as data
 from PIL import Image
 import numpy as np
 
+
 class MAMI_vb_multitask_dataset(data.Dataset):
 
     def __init__(self, text, image_path, text_processor, binary_label, source_modality_label, max_length=128):

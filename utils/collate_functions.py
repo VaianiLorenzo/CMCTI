@@ -23,3 +23,11 @@ def vb_test_collate_fn(batch):
     text = [item[0] for item in batch]
     img = [item[1] for item in batch]
     return [text, img]
+
+
+def multitask_collate_fn(batch):
+    text = [item[0] for item in batch]
+    img = [item[1] for item in batch]
+    label_binary = [item[2] for item in batch]
+    label_source = [item[3] for item in batch]
+    return [text, img, label_binary, label_source]
