@@ -29,7 +29,7 @@ if __name__ == "__main__":
     if not os.path.isdir(path_output_dir):
         os.mkdir(path_output_dir)
 
-    names, text, misogynous, source = read_csv_data(cfg.PATH.FILE_TRAIN_DATASET, random_state=random_state)
+    names, text, misogynous, type_label, source = read_csv_data(cfg.PATH.FILE_TRAIN_DATASET, random_state=random_state)
 
     if cfg.MODEL.TYPE == "base":
         text_model_name = "bert-base-cased"
@@ -55,12 +55,14 @@ if __name__ == "__main__":
     train_image_path = []
     train_text = []
     train_binary_label = []
+    train_type_label = []
     train_source_label = []
 
     for i in tqdm(range(int(len(names) * cfg.DATALOADER.PERCENTAGE_TRAIN))):
         train_image_path.append(os.path.join("data", "TRAINING", names[i]))
         train_text.append(text[i])
         train_binary_label.append(misogynous[i])
+        train_type_label.append(type_label[i])
         train_source_label.append(source[i])
 
     if cfg.MODEL.TYPE == "base":
@@ -71,7 +73,8 @@ if __name__ == "__main__":
                                                   max_length=128)
     elif cfg.MODEL.TYPE == "multitask":
         train_dataloader = MAMI_vb_multitask_dataset(train_text, train_image_path, text_tokenizer, train_binary_label,
-                                                     train_source_label, max_length=128)
+                                                     train_type_label, train_source_label, max_length=128)
+
     train_dataloader = DataLoader(train_dataloader, batch_size=cfg.DATALOADER.BATCH_SIZE, shuffle=True,
                                   num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=collate_fn,
                                   prefetch_factor=4)
@@ -88,12 +91,14 @@ if __name__ == "__main__":
     val_image_path = []
     val_text = []
     val_binary_label = []
+    val_type_label = []
     val_source_label = []
 
     for i in tqdm(range(int(len(names) * cfg.DATALOADER.PERCENTAGE_TRAIN), len(names), 1)):
         val_image_path.append(os.path.join("data", "TRAINING", names[i]))
         val_text.append(text[i])
         val_binary_label.append(misogynous[i])
+        val_type_label.append(type_label[i])
         val_source_label.append(source[i])
 
     if cfg.MODEL.TYPE == "base":
@@ -104,7 +109,7 @@ if __name__ == "__main__":
                                                 max_length=128)
     elif cfg.MODEL.TYPE == "multitask":
         val_dataloader = MAMI_vb_multitask_dataset(val_text, val_image_path, text_tokenizer, val_binary_label,
-                                                   val_source_label, max_length=128)
+                                                   val_type_label, val_source_label, max_length=128)
     val_dataloader = DataLoader(val_dataloader, batch_size=cfg.DATALOADER.BATCH_SIZE, shuffle=True,
                                 num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=collate_fn,
                                 prefetch_factor=4)
@@ -127,11 +132,11 @@ if __name__ == "__main__":
         elif cfg.MODEL.TYPE == "visual_bert":
             test_dataloader = MAMI_test_vb_binary_dataset(texts, images, text_tokenizer, max_length=128)
     elif cfg.MODEL.TYPE == "multitask":
-        names, test_text, test_binary_label, test_source_label = read_csv_data(cfg.PATH.FILE_TEST_DATASET,
+        names, test_text, test_binary_label, test_type_label, test_source_label = read_csv_data(cfg.PATH.FILE_TEST_DATASET,
                                                                                random_state=None)
         test_image_path = [os.path.join("data", "test", name) for name in names]
         test_dataloader = MAMI_vb_multitask_dataset(test_text, val_image_path, text_tokenizer, test_binary_label,
-                                                    test_source_label, max_length=128)
+                                                    test_type_label, test_source_label, max_length=128)
 
     test_dataloader = DataLoader(test_dataloader, batch_size=cfg.DATALOADER.BATCH_SIZE, shuffle=True,
                                  num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=test_collate_fn,

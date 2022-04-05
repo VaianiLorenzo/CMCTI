@@ -9,7 +9,7 @@ _C.PATH = CN()
 #_C.PATH.DIR_DATA = os.path.join("data")
 #_C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "training_multitask_small.csv")
 #_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "MAMI", "test", "Test.csv")
-_C.PATH.FILE_TRAIN_DATASET = os.path.join("data", "training_multitask_small.csv")
+_C.PATH.FILE_TRAIN_DATASET = os.path.join("data", "training", "training_multitask_small.csv")
 _C.PATH.FILE_TEST_DATASET = os.path.join("..", "MAMI", "test", "Test.csv")
 
 _C.COMET = CN()

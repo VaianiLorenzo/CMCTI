@@ -49,11 +49,15 @@ def read_csv_data(path_dataset, random_state=None):
     '''
     text = list(df["Text Transcription"])
 
+    # Construct type labels
+    type_label = df[["misogynous", "shaming", "stereotype", "objectification", "violence"]]
+    type_label = type_label.to_numpy()
+
     # Construct source identification labels
     source = np.zeros((len(df), 5))
     for i in range(len(df)):
         row = df.iloc[i]
-        label = row["text"] * 1 + row["image"] * 2 + row["either"] * 3 + row["both"] * 4
+        label = int(row["text"] * 1 + row["image"] * 2 + row["either"] * 3 + row["both"] * 4)
         source[i, label] = 1
 
-    return names, text, misogynous, source
+    return names, text, misogynous, type_label, source

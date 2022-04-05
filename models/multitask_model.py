@@ -63,6 +63,9 @@ class MAMI_multitask_model(nn.Module):
         self.source_classifier = MLP(input_dim=768, output_dim=5)
         self.source_classifier = self.source_classifier.to(device)
 
+        self.multilabel_classifier = MLP(input_dim=768, output_dim=5)
+        self.multilabel_classifier = self.multilabel_classifier.to(device)
+
 
     def forward(self, x_text, x_image):
         visual_embeds = None
@@ -128,16 +131,15 @@ class MAMI_multitask_model(nn.Module):
 
         binary_pred = self.binary_classifier(out_embeddings)
         source_pred = self.source_classifier(out_embeddings)
+        multilabel_pred = self.multilabel_classifier(out_embeddings)
 
-        return binary_pred, source_pred
+        return binary_pred, multilabel_pred, source_pred
 
     def calculate_feats_patches(self, model, x_image):
         visual_embeds = []
 
         inputs = []
         for path in x_image:
-            path = "../MAMI/" + path[5:]
-            print(path)
             image = cv2.imread(path)
             height, width = image.shape[:2]
             image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))

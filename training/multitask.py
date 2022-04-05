@@ -6,13 +6,20 @@ import torch
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss
 from tqdm import tqdm
 
+from training.loss_fn import MultitaskLossA
 from utils.metrics import binary_acc
 import torch.nn.functional as F
 
 
 def _do_epoch(device, model, dataloader, train=False, optimizer=None, scheduler=None):
-    binary_loss_function = BCEWithLogitsLoss()
-    source_modality_loss_function = CrossEntropyLoss()
+    # binary_loss_function = BCEWithLogitsLoss()
+    # source_modality_loss_function = CrossEntropyLoss()
+    loss_fn = MultitaskLossA()
+
+    if train:
+        model.train()
+    else:
+        model.eval()
 
     # Iterate over the DataLoader for training data
     current_loss = 0.0
@@ -21,20 +28,20 @@ def _do_epoch(device, model, dataloader, train=False, optimizer=None, scheduler=
     binary_ground_truth = []
     list_source_modality_outputs = []
     source_modality_ground_truth = []
-    model.train()
     for data in tqdm(dataloader):
         # Get and prepare inputs
-        texts, images, binary_targets, source_modality_targets = data
+        texts, images, binary_targets, type_targets, source_modality_targets = data
         binary_targets = torch.tensor(binary_targets).to(device).float()
+        type_targets = torch.tensor(type_targets).to(device).float()
         source_modality_targets = torch.tensor(source_modality_targets).to(device).float()
 
         # Perform forward pass
         if train:
             optimizer.zero_grad()
-            out_binary, out_source = model(texts, images)
+            out_binary, out_type, out_source = model(texts, images)
         else:
             with torch.no_grad():
-                out_binary, out_source = model(texts, images)
+                out_binary, out_type, out_source = model(texts, images)
 
         out_binary = out_binary.squeeze()
 
@@ -48,24 +55,27 @@ def _do_epoch(device, model, dataloader, train=False, optimizer=None, scheduler=
         source_modality_tar = [torch.argmax(t).item() for t in source_modality_targets]
         source_modality_ground_truth.extend(source_modality_tar)
 
-        # compute loss
-        binary_loss = binary_loss_function(out_binary, binary_targets)
-        print("\tBL", binary_loss)
-        source_modality_loss = source_modality_loss_function(out_source, source_modality_targets)
-        print("\tML", source_modality_loss)
+        # Compute loss
+        loss = loss_fn(out_binary, out_type, out_source, binary_targets, type_targets, source_modality_targets)
 
-        binary_pred = torch.round(torch.sigmoid(out_binary))
-        source_prob = F.softmax(out_source, dim=1)
-        source_pred = [sp.tolist().index(max(sp.tolist())) for sp in source_prob]
-        consistency_loss = 0
-        for b_pred, s_pred in zip(binary_pred, source_pred):
-            if (b_pred == 0 and s_pred > 0) or (b_pred > 0 and s_pred == 0):
-                consistency_loss += 1
-        consistency_loss = consistency_loss / len(binary_pred)
-        print("\tCL", consistency_loss)
-
-        loss = binary_loss + source_modality_loss + consistency_loss
-        print("LOSS:", loss)
+        # # compute loss
+        # binary_loss = binary_loss_function(out_binary, binary_targets)
+        # print("\tBL", binary_loss)
+        # source_modality_loss = source_modality_loss_function(out_source, source_modality_targets)
+        # print("\tML", source_modality_loss)
+        #
+        # binary_pred = torch.round(torch.sigmoid(out_binary))
+        # source_prob = F.softmax(out_source, dim=1)
+        # source_pred = [sp.tolist().index(max(sp.tolist())) for sp in source_prob]
+        # consistency_loss = 0
+        # for b_pred, s_pred in zip(binary_pred, source_pred):
+        #     if (b_pred == 0 and s_pred > 0) or (b_pred > 0 and s_pred == 0):
+        #         consistency_loss += 1
+        # consistency_loss = consistency_loss / len(binary_pred)
+        # print("\tCL", consistency_loss)
+        #
+        # loss = binary_loss + source_modality_loss + consistency_loss
+        # print("LOSS:", loss)
 
         if train:
             # Perform backward pass
