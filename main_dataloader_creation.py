@@ -59,7 +59,7 @@ if __name__ == "__main__":
     train_source_label = []
 
     for i in tqdm(range(int(len(names) * cfg.DATALOADER.PERCENTAGE_TRAIN))):
-        train_image_path.append(os.path.join("data", "TRAINING", names[i]))
+        train_image_path.append(os.path.join("TRAINING", names[i]))
         train_text.append(text[i])
         train_binary_label.append(misogynous[i])
         train_type_label.append(type_label[i])
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     val_source_label = []
 
     for i in tqdm(range(int(len(names) * cfg.DATALOADER.PERCENTAGE_TRAIN), len(names), 1)):
-        val_image_path.append(os.path.join("data", "TRAINING", names[i]))
+        val_image_path.append(os.path.join("TRAINING", names[i]))
         val_text.append(text[i])
         val_binary_label.append(misogynous[i])
         val_type_label.append(type_label[i])
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                                 num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=collate_fn,
                                 prefetch_factor=4)
     torch.save(val_dataloader, os.path.join(path_output_dir, f"val_{cfg.MODEL.TYPE}_dataloader.bkp"))
-
+'''
     ####################
     # TEST DATALOADER #
     ####################
@@ -142,3 +142,4 @@ if __name__ == "__main__":
                                  num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=test_collate_fn,
                                  prefetch_factor=4)
     torch.save(test_dataloader, os.path.join(path_output_dir, f"test_{cfg.MODEL.TYPE}_dataloader.bkp"))
+'''

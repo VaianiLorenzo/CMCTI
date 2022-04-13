@@ -140,6 +140,7 @@ class MAMI_multitask_model(nn.Module):
 
         inputs = []
         for path in x_image:
+            path = "../MAMI/" + path
             image = cv2.imread(path)
             height, width = image.shape[:2]
             image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))

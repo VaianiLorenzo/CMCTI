@@ -47,7 +47,9 @@ def _do_epoch(device, model, dataloader, train=False, optimizer=None, scheduler=
 
         # update lists for accuracy computation
         list_binary_outputs.extend(list(out_binary))
-        list_source_modality_outputs.extend(list(out_source))
+        source_prob = F.softmax(out_source, dim=1)
+        source_pred = [sp.tolist().index(max(sp.tolist())) for sp in source_prob]
+        list_source_modality_outputs.extend(source_pred)
 
         binary_tar = [t.item() for t in binary_targets]
         binary_ground_truth.extend(binary_tar)
@@ -92,10 +94,13 @@ def _do_epoch(device, model, dataloader, train=False, optimizer=None, scheduler=
 
     epoch_loss = current_loss / n_samples
     acc = binary_acc(torch.tensor(list_binary_outputs), torch.tensor(binary_ground_truth))
-    f1 = f1_score(np.array(binary_ground_truth),
+    binary_f1 = f1_score(np.array(binary_ground_truth),
                   torch.round(torch.sigmoid(torch.tensor(list_binary_outputs))).numpy())
+    source_modality_f1_macro = f1_score(np.array(source_modality_ground_truth), torch.tensor(list_source_modality_outputs).numpy(), average = "macro")
+    source_modality_f1_none = f1_score(np.array(source_modality_ground_truth), torch.tensor(list_source_modality_outputs).numpy(), average = None)
+    source_modality_f1 = [source_modality_f1_macro, source_modality_f1_none]
 
-    return epoch_loss, acc, f1
+    return epoch_loss, acc, binary_f1, source_modality_f1
 
 
 def train_model(cfg, model, device, n_epochs, optimizer, scheduler, train_dataloader, val_dataloader,
@@ -103,33 +108,37 @@ def train_model(cfg, model, device, n_epochs, optimizer, scheduler, train_datalo
     for epoch in range(0, n_epochs):
         print(f'Starting epoch {epoch + 1}')
 
-        train_loss, train_acc, train_f1 = _do_epoch(device, model, train_dataloader, train=True, optimizer=optimizer,
+        train_loss, train_acc, train_binary_f1, train_source_modality_f1 = _do_epoch(device, model, train_dataloader, train=True, optimizer=optimizer,
                                                     scheduler=scheduler)
 
         print("LR:", scheduler.get_last_lr())
         print('Loss after epoch %5d: %.8f' % (epoch + 1, train_loss / len(train_dataloader)))
         print("Train Accuracy: ", train_acc)
-        print("Train F1: ", train_f1)
+        print("Train Binary F1: ", train_binary_f1)
+        print("Train Source Modality F1: ", train_source_modality_f1)
 
         # saving as checkpoint
         file_name = f"MAMI_multitask_{cfg.MODEL.MASKR_MODALITY}_{epoch}.model"
         torch.save(model, os.path.join(path_dir_checkpoint, file_name))
 
         ##### Validation #####
-        val_loss, val_acc, val_f1 = _do_epoch(device, model, val_dataloader)
+        val_loss, val_acc, val_binary_f1, val_source_modality_f1 = _do_epoch(device, model, val_dataloader)
 
         print("Validation Loss:", val_loss)
         print("Validation Accuracy: ", val_acc)
-        print("Validation F1: ", val_f1)
+        print("Validation F1: ", val_binary_f1)
+        print("Validation Source Modality F1: ", val_source_modality_f1)
 
         f = open("log_file.txt", "a+")
         f.write("Epoch " + str(epoch + 1) + ":\n")
         f.write("\tTrain loss:\t\t%.8f \n" % train_loss)
         f.write("\tTrain ACCURACY:\t" + str(train_acc) + "\n")
-        f.write("\tTrain F1:\t" + str(train_f1) + "\n")
+        f.write("\tTrain Binary F1:\t" + str(train_binary_f1) + "\n")
+        f.write("\tTrain Source Modality F1:\t" + str(train_source_modality_f1) + "\n")
         f.write("\tValidation loss:\t%.8f \n" % val_loss)
         f.write("\tValidation ACCURACY:\t" + str(val_acc) + "\n")
-        f.write("\tValidation F1:\t" + str(val_f1) + "\n")
+        f.write("\tValidation Binary F1:\t" + str(val_binary_f1) + "\n")
+        f.write("\tValidation Source Modality F1:\t" + str(val_source_modality_f1) + "\n")
         f.close()
 
         if cfg.COMET.ENABLED:
