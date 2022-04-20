@@ -24,7 +24,7 @@ if __name__ == "__main__":
     cfg = get_cfg_defaults()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    #device = "cpu"
+    # device = "cpu"
 
     experiment = None
     if cfg.COMET.ENABLED:
@@ -46,7 +46,8 @@ if __name__ == "__main__":
                                      maskr_modality=cfg.MODEL.MASKR_MODALITY)
     elif cfg.MODEL.TYPE == "multitask":
         model = MAMI_multitask_model(device=device, class_modality=cfg.MODEL.CLASS_MODALITY,
-                                     maskr_modality=cfg.MODEL.MASKR_MODALITY)
+                                     maskr_modality=cfg.MODEL.MASKR_MODALITY,
+                                     multitask_mod=cfg.MODEL.MULTITASK_MODALITY)
 
     # Create checkpoint directory if it does not exist
     path_dir_checkpoint = os.path.join("data", f"checkpoints_{cfg.MODEL.TYPE}")

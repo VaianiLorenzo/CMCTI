@@ -5,12 +5,10 @@ from yacs.config import CfgNode as CN
 _C = CN()
 
 _C.PATH = CN()
-#_C.PATH.DIR_PROJECT = "."
-#_C.PATH.DIR_DATA = os.path.join("data")
-#_C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "training_multitask_small.csv")
-#_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "MAMI", "test", "Test.csv")
-_C.PATH.FILE_TRAIN_DATASET = os.path.join("data", "training", "training_multitask_small.csv")
-_C.PATH.FILE_TEST_DATASET = os.path.join("..", "MAMI", "test", "Test.csv")
+_C.PATH.DIR_PROJECT = "."
+_C.PATH.DIR_DATA = os.path.join("data")
+_C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "training", "training_multitask_small.csv")
+_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "MAMI", "test", "Test.csv")
 
 _C.COMET = CN()
 _C.COMET.ENABLED = False
@@ -28,6 +26,7 @@ _C.MODEL.TYPE = "multitask"  # base - visual_bert - multitask
 _C.MODEL.BASELINE_MODALITY = "multimodal"  # image - text
 _C.MODEL.CLASS_MODALITY = "cls"  # "VisualBERT Classification Modality (cls or avg)"
 _C.MODEL.MASKR_MODALITY = "coco"  # "VisualBERT MASK R-CNN Modality (coco, lvis or both)"
+_C.MODEL.MULTITASK_MODALITY = [1, 1, 1]  # Enable/Disable tasks inside the multitask model
 
 _C.TRAINING = CN()
 _C.TRAINING.EPOCHS = 25

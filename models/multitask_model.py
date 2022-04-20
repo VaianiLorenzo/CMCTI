@@ -12,13 +12,19 @@ from models.mlp import MLP
 
 class MAMI_multitask_model(nn.Module):
 
-    def __init__(self, vb_model_name='uclanlp/visualbert-nlvr2-coco-pre', class_modality="cls", maskr_modality="coco", device=None):
+    def __init__(self, vb_model_name='uclanlp/visualbert-nlvr2-coco-pre', class_modality="cls", maskr_modality="coco",
+                 device=None, multitask_mod=[1, 1, 1]):
         super().__init__()
 
+        assert multitask_mod != [0, 0, 0], "At least one modality must be active"
+
+        if multitask_mod is None:
+            multitask_mod = [1, 1, 1]
         self.cfg_maskr_lvis = "LVISv0.5-InstanceSegmentation/mask_rcnn_R_101_FPN_1x.yaml"
         self.cfg_maskr_coco = "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"
 
         self.device = device
+        self.multitask_mod = multitask_mod
         self.class_modality = class_modality
         self.maskr_modality = maskr_modality
         self.visual_bert = VisualBertModel.from_pretrained(vb_model_name)
@@ -30,7 +36,7 @@ class MAMI_multitask_model(nn.Module):
             cfg.merge_from_file(model_zoo.get_config_file(cfg_path))
             cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # ROI HEADS SCORE THRESHOLD
             if device == "cpu":
-                cfg['MODEL']['DEVICE'] = 'cpu' # if you are not using cuda
+                cfg['MODEL']['DEVICE'] = 'cpu'  # if you are not using cuda
             cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(cfg_path)
 
             self.maskr_coco = build_model(cfg)
@@ -66,7 +72,6 @@ class MAMI_multitask_model(nn.Module):
         self.multilabel_classifier = MLP(input_dim=768, output_dim=5)
         self.multilabel_classifier = self.multilabel_classifier.to(device)
 
-
     def forward(self, x_text, x_image):
         visual_embeds = None
 
@@ -97,7 +102,8 @@ class MAMI_multitask_model(nn.Module):
             mask = [1] * len(visual_embeds[i])
             gap = 32 - len(visual_embeds[i])
             for _ in range(gap):
-                visual_embeds[i] = torch.cat((visual_embeds[i], torch.stack([torch.tensor([0] * 1024).to(self.device)])), 0)
+                visual_embeds[i] = torch.cat(
+                    (visual_embeds[i], torch.stack([torch.tensor([0] * 1024).to(self.device)])), 0)
                 mask.append(0)
 
             visual_attention_mask.append(torch.tensor(mask).to(self.device))
@@ -129,9 +135,24 @@ class MAMI_multitask_model(nn.Module):
                 list_embed.append(average)
             out_embeddings = torch.stack(list_embed)
 
-        binary_pred = self.binary_classifier(out_embeddings)
-        source_pred = self.source_classifier(out_embeddings)
-        multilabel_pred = self.multilabel_classifier(out_embeddings)
+        # Enable gradient calculation of each head only if the relative modality is enabled
+        if self.multitask_mod[0] == 1:
+            binary_pred = self.binary_classifier(out_embeddings)
+        else:
+            with torch.no_grad():
+                binary_pred = self.binary_classifier(out_embeddings)
+
+        if self.multitask_mod[1] == 1:
+            multilabel_pred = self.multilabel_classifier(out_embeddings)
+        else:
+            with torch.no_grad():
+                multilabel_pred = self.multilabel_classifier(out_embeddings)
+
+        if self.multitask_mod[2] == 1:
+            source_pred = self.source_classifier(out_embeddings)
+        else:
+            with torch.no_grad():
+                source_pred = self.source_classifier(out_embeddings)
 
         return binary_pred, multilabel_pred, source_pred
 
@@ -140,7 +161,7 @@ class MAMI_multitask_model(nn.Module):
 
         inputs = []
         for path in x_image:
-            path = "../MAMI/" + path
+            # path = "../MAMI/" + path
             image = cv2.imread(path)
             height, width = image.shape[:2]
             image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
