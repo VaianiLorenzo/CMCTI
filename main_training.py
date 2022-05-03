@@ -10,6 +10,7 @@ from models.multitask_model import MAMI_multitask_model
 from utils.config import get_cfg_defaults
 from training.binary import train_model as train_binary
 from training.multitask import train_model as train_multitask
+from utils.utils import read_config
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 
@@ -21,7 +22,8 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 path_output_dir = os.path.join("data", "dataloaders")
 
 if __name__ == "__main__":
-    cfg = get_cfg_defaults()
+    cfg = read_config()
+    print(f"checkpoints_{cfg.MODEL.TYPE}_{cfg.MODEL.MULTITASK_MODALITY[0]}_{cfg.MODEL.MULTITASK_MODALITY[1]}_{cfg.MODEL.MULTITASK_MODALITY[2]}")
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # device = "cpu"
@@ -50,7 +52,7 @@ if __name__ == "__main__":
                                      multitask_mod=cfg.MODEL.MULTITASK_MODALITY)
 
     # Create checkpoint directory if it does not exist
-    path_dir_checkpoint = os.path.join("data", f"checkpoints_{cfg.MODEL.TYPE}")
+    path_dir_checkpoint = os.path.join("data", f"checkpoints_{cfg.MODEL.TYPE}_{cfg.MODEL.MULTITASK_MODALITY[0]}_{cfg.MODEL.MULTITASK_MODALITY[1]}_{cfg.MODEL.MULTITASK_MODALITY[2]}")
     if not os.path.isdir(path_dir_checkpoint):
         os.mkdir(path_dir_checkpoint)
     model.to(device)

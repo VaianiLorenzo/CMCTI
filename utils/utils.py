@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from utils.config import get_cfg_defaults as get_cfg_dataloaders
+from utils.config import get_cfg_defaults
 
 
 def parse_cmd_line_params():
@@ -17,8 +17,8 @@ def parse_cmd_line_params():
     return args
 
 
-def read_dataloaders_config():
-    cfg = get_cfg_dataloaders()
+def read_config():
+    cfg = get_cfg_defaults()
 
     cmd_args = parse_cmd_line_params()
 

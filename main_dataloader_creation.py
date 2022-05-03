@@ -14,7 +14,7 @@ from datasets.MAMI_vb_binary_dataset import MAMI_vb_binary_dataset
 from datasets.MAMI_vb_multitask_dataset import MAMI_vb_multitask_dataset
 from utils.collate_functions import base_collate_fn, base_test_collate_fn, vb_collate_fn, vb_test_collate_fn, \
     multitask_collate_fn
-from utils.utils import read_dataloaders_config, read_csv_data
+from utils.utils import read_config, read_csv_data
 
 path_output_dir = os.path.join("data", "dataloaders")
 
@@ -23,7 +23,7 @@ random_state = 1995
 
 
 if __name__ == "__main__":
-    cfg = read_dataloaders_config()
+    cfg = read_config()
 
     # Create output directory if does not exist
     if not os.path.isdir(path_output_dir):
