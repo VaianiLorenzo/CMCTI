@@ -40,10 +40,6 @@ def _do_epoch(device, model, dataloader, loss_fn, train=False, optimizer=None, s
         if train:
             optimizer.zero_grad()
             out_binary, out_type, out_source = model(texts, images)
-
-            print(f"out_binary: {out_binary}")
-            print(f"out_type: {out_type}")
-            print(f"out_source: {out_source}")
         else:
             with torch.no_grad():
                 out_binary, out_type, out_source = model(texts, images)
