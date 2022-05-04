@@ -7,9 +7,8 @@ _C = CN()
 _C.PATH = CN()
 _C.PATH.DIR_PROJECT = "."
 _C.PATH.DIR_DATA = os.path.join("data")
-_C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "training", "training_multitask_small.csv")
-_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "MAMI", "test", "Test.csv")
-
+_C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "training", "training_multitask.csv")
+_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "test", "Test.csv")
 _C.COMET = CN()
 _C.COMET.ENABLED = False
 _C.COMET.API_KEY = "LiMIt9D5WsCZo294IIYymGhdv"

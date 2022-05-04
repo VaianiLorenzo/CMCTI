@@ -1,7 +1,9 @@
 import gc
+from operator import index
 import os
 
 import pandas as pd
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -20,6 +22,9 @@ path_output_dir = os.path.join("data", "dataloaders")
 
 # Always use the same train/validation split
 random_state = 1995
+
+#def compute_weights(labels):
+
 
 
 if __name__ == "__main__":
@@ -64,6 +69,55 @@ if __name__ == "__main__":
         train_binary_label.append(misogynous[i])
         train_type_label.append(type_label[i])
         train_source_label.append(source[i])
+
+    '''
+    # SOURCE WEIGHTS
+    source_count = np.array(sum(train_source_label))
+    source_weights = 1. / source_count
+    source_samples_weights = []
+    for l in train_source_label:
+        indexes = np.where(l == 1)[0]
+        weight = 0
+        for idx in indexes:
+            weight = weight + source_weights[idx]
+        weight = weight / len(indexes)
+        source_samples_weights.append(weight)
+
+    # TYPE WEIGHTS
+    type_count = list(sum(train_type_label))
+    count = 0
+    for a in train_type_label:
+        if list(a) == [0,0,0,0,0]:
+            count += 1
+    type_count.insert( 0, count)
+    type_count = np.asarray(type_count)
+    type_weights = 1. / type_count
+    type_samples_weights = []
+    for l in train_type_label:
+        indexes = np.where(l == 1)[0]
+        weight = 0
+        if len(indexes) == 0:
+            weight = type_weights[0]
+        else:
+            for idx in indexes:
+                weight = weight + type_weights[idx+1]
+            weight = weight / len(indexes)
+        type_samples_weights.append(weight)
+
+    weights = np.asarray(source_samples_weights) + np.asarray(type_samples_weights)
+    '''
+
+    
+    source_count = np.array(sum(train_source_label))
+    source_weights = 1. / source_count
+    source_weights = source_weights / sum(source_weights)
+    np.save("data/source_weights.npy", source_weights)
+        
+    type_count = list(sum(train_type_label))
+    type_count = np.asarray(type_count)
+    type_weights = 1. - type_count / len(train_type_label)
+    np.save("data/type_weights.npy", type_weights)
+
 
     if cfg.MODEL.TYPE == "base":
         train_dataloader = MAMI_binary_dataset(train_text, train_image_path, text_tokenizer, train_binary_label,
