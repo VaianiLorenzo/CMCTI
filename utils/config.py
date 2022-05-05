@@ -8,9 +8,10 @@ _C.PATH = CN()
 _C.PATH.DIR_PROJECT = "."
 _C.PATH.DIR_DATA = os.path.join("data")
 _C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "training", "training_multitask.csv")
-_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "test", "Test.csv")
+_C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "test", "test-multitask.csv")
+
 _C.COMET = CN()
-_C.COMET.ENABLED = False
+_C.COMET.ENABLED = True
 _C.COMET.API_KEY = "LiMIt9D5WsCZo294IIYymGhdv"
 _C.COMET.PROJECT_NAME = "mami"
 _C.COMET.WORKSPACE = "vaianilorenzo"
@@ -33,8 +34,8 @@ _C.TRAINING.GAMMA = 1  # Gamma value for optimizer
 _C.TRAINING.LR = 1e-5
 
 _C.TEST = CN()
-_C.TEST.DIR_CHECKPOINTS = os.path.join("data", f"checkpoints_{_C.MODEL.TYPE}")
-_C.TEST.FILE_CHECKPOINT = "MAMI_vb_model_coco_0.model"
+_C.TEST.DIR_CHECKPOINTS = os.path.join("data", f"models")
+_C.TEST.FILE_CHECKPOINT = "MAMI_multitask_coco_24.model"
 
 
 def get_cfg_defaults():

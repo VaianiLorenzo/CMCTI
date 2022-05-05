@@ -5,7 +5,8 @@ import numpy as np
 
 
 class MultitaskLossA(nn.Module):
-    def __init__(self, multitask_mod: list, alpha: float = 1, balanced: boolean = True):
+    def __init__(self, multitask_mod: list, type_weights: torch.Tensor, source_weights: torch.Tensor, alpha: float = 1,
+                 balanced: boolean = True):
         super().__init__()
 
         assert multitask_mod != [0, 0, 0], "At least one modality must be active"
@@ -13,11 +14,13 @@ class MultitaskLossA(nn.Module):
         self.alpha = alpha
         self.balanced = balanced
         self.bce_fn = nn.BCEWithLogitsLoss()
-        type_weights = np.load("data/type_weights.npy")
-        self.bce_type_fn = [nn.BCEWithLogitsLoss(pos_weight=type_weights[0]),nn.BCEWithLogitsLoss(pos_weight=type_weights[1]),nn.BCEWithLogitsLoss(pos_weight=type_weights[2]),nn.BCEWithLogitsLoss(pos_weight=type_weights[3]),nn.BCEWithLogitsLoss(pos_weight=type_weights[4])]
-        source_weights = np.load("data/source_weights.npy")
+        self.bce_type_fn = [nn.BCEWithLogitsLoss(pos_weight=type_weights[0]),
+                            nn.BCEWithLogitsLoss(pos_weight=type_weights[1]),
+                            nn.BCEWithLogitsLoss(pos_weight=type_weights[2]),
+                            nn.BCEWithLogitsLoss(pos_weight=type_weights[3]),
+                            nn.BCEWithLogitsLoss(pos_weight=type_weights[4])]
         if balanced:
-            self.cross_entropy_fn = nn.CrossEntropyLoss(weight = source_weights)
+            self.cross_entropy_fn = nn.CrossEntropyLoss(weight=source_weights)
         else:
             self.cross_entropy_fn = nn.CrossEntropyLoss()
         self.multitask_mod = multitask_mod
@@ -33,9 +36,9 @@ class MultitaskLossA(nn.Module):
         if self.multitask_mod[1] == 1:
             if self.balanced:
                 tmp_loss = 0
-                for i,p,t in enumerate(zip(y_pred_type, y_true_type)):
-                    tmp_loss += self.bce_type_fn[i](p,t)
-                loss += tmp_loss/len(self.bce_type_fn)
+                for i in range(y_pred_type.shape[1]):
+                    tmp_loss += self.bce_type_fn[i](y_pred_type[:, i], y_true_type[:, i])
+                loss += tmp_loss / len(self.bce_type_fn)
             else:
                 loss += self.bce_fn(y_pred_type, y_true_type)
         # Task C
