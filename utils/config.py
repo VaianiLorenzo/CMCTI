@@ -9,6 +9,8 @@ _C.PATH.DIR_PROJECT = "."
 _C.PATH.DIR_DATA = os.path.join("data")
 _C.PATH.FILE_TRAIN_DATASET = os.path.join(_C.PATH.DIR_DATA, "training", "training_multitask.csv")
 _C.PATH.FILE_TEST_DATASET = os.path.join(_C.PATH.DIR_DATA, "test", "test-multitask.csv")
+_C.PATH.FILE_SOURCE_WEIGHTS = os.path.join(_C.PATH.DIR_DATA, "source_weights.npy")
+_C.PATH.FILE_TYPE_WEIGHTS = os.path.join(_C.PATH.DIR_DATA, "type_weights.npy")
 
 _C.COMET = CN()
 _C.COMET.ENABLED = True
@@ -32,10 +34,11 @@ _C.TRAINING = CN()
 _C.TRAINING.EPOCHS = 25
 _C.TRAINING.GAMMA = 1  # Gamma value for optimizer
 _C.TRAINING.LR = 1e-5
+_C.TRAINING.BALANCED = False
 
 _C.TEST = CN()
 _C.TEST.DIR_CHECKPOINTS = os.path.join("data", f"models")
-_C.TEST.FILE_CHECKPOINT = "MAMI_multitask_coco_24.model"
+_C.TEST.FILE_CHECKPOINT = "multitask_111_balanced.model"
 
 
 def get_cfg_defaults():

@@ -66,15 +66,16 @@ if __name__ == "__main__":
         train_type_label.append(type_label[i])
         train_source_label.append(source[i])
 
+    # Save file of weights for balancing
     source_count = np.array(sum(train_source_label))
     source_weights = 1. / source_count
     source_weights = source_weights / sum(source_weights)
-    np.save("data/source_weights.npy", source_weights)
+    np.save(cfg.PATH.FILE_SOURCE_WEIGHTS, source_weights)
 
     type_count = list(sum(train_type_label))
     type_count = np.asarray(type_count)
     type_weights = 1. - type_count / len(train_type_label)
-    np.save("data/type_weights.npy", type_weights)
+    np.save(cfg.PATH.FILE_TYPE_WEIGHTS, type_weights)
 
     if cfg.MODEL.TYPE == "base":
         train_dataloader = MAMI_binary_dataset(train_text, train_image_path, text_tokenizer, train_binary_label,

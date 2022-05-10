@@ -5,8 +5,8 @@ import numpy as np
 
 
 class MultitaskLossA(nn.Module):
-    def __init__(self, multitask_mod: list, type_weights: torch.Tensor, source_weights: torch.Tensor, alpha: float = 1,
-                 balanced: boolean = True):
+    def __init__(self, multitask_mod: list, type_weights: torch.Tensor = None, source_weights: torch.Tensor = None,
+                 alpha: float = 1, balanced: boolean = False):
         super().__init__()
 
         assert multitask_mod != [0, 0, 0], "At least one modality must be active"
@@ -14,12 +14,12 @@ class MultitaskLossA(nn.Module):
         self.alpha = alpha
         self.balanced = balanced
         self.bce_fn = nn.BCEWithLogitsLoss()
-        self.bce_type_fn = [nn.BCEWithLogitsLoss(pos_weight=type_weights[0]),
-                            nn.BCEWithLogitsLoss(pos_weight=type_weights[1]),
-                            nn.BCEWithLogitsLoss(pos_weight=type_weights[2]),
-                            nn.BCEWithLogitsLoss(pos_weight=type_weights[3]),
-                            nn.BCEWithLogitsLoss(pos_weight=type_weights[4])]
         if balanced:
+            self.bce_type_fn = [nn.BCEWithLogitsLoss(pos_weight=type_weights[0]),
+                                nn.BCEWithLogitsLoss(pos_weight=type_weights[1]),
+                                nn.BCEWithLogitsLoss(pos_weight=type_weights[2]),
+                                nn.BCEWithLogitsLoss(pos_weight=type_weights[3]),
+                                nn.BCEWithLogitsLoss(pos_weight=type_weights[4])]
             self.cross_entropy_fn = nn.CrossEntropyLoss(weight=source_weights)
         else:
             self.cross_entropy_fn = nn.CrossEntropyLoss()

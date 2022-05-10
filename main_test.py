@@ -1,9 +1,10 @@
+import os
+import numpy as np
 import pandas as pd
+from sklearn.metrics import f1_score
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
-
-import os
 
 from utils.utils import read_config
 
@@ -29,14 +30,18 @@ if __name__ == "__main__":
     names = []
     # Task A labels
     list_binary_outputs = []
+    binary_ground_truth = []
     # Task B labels
     list_type_misogyny = []
     list_type_shaming = []
     list_type_stereotype = []
     list_type_objectification = []
     list_type_violence = []
+    list_type_outputs = []
+    type_ground_truth = []
     # Task C labels
     list_source_modality_outputs = []
+    source_modality_ground_truth = []
     with torch.no_grad():
         for index, data in enumerate(tqdm(test_dataloader)):
             if cfg.MODEL.TYPE == "multitask":
@@ -65,6 +70,14 @@ if __name__ == "__main__":
 
                     list_source_modality_outputs.append(source_pred[i])
 
+                    # Register targets for metrics calculation
+                    binary_ground_truth.append(binary_targets[i])
+                    source_modality_ground_truth.append(torch.argmax(torch.tensor(source_modality_targets[i])).item())
+
+                # Register type targets and predictions in lists for metrics calculation
+                list_type_outputs.extend(type_pred)
+                type_ground_truth.extend(type_targets)
+
             else:
                 if cfg.MODEL.TYPE == "base":
                     texts, images, path = data
@@ -78,6 +91,28 @@ if __name__ == "__main__":
                     names.append(n[5:])
 
     if cfg.MODEL.TYPE == "multitask":
+        # --------- Calculate metrics ---------
+        # F1 Task A
+        binary_f1 = f1_score(np.array(binary_ground_truth),
+                             torch.round(torch.sigmoid(torch.tensor(list_binary_outputs))).numpy())
+
+        # F1 Task B
+        type_f1_macro = f1_score(np.array(type_ground_truth), np.array(list_type_outputs), average="macro")
+        type_f1_none = f1_score(np.array(type_ground_truth), np.array(list_type_outputs), average=None)
+        type_f1 = [type_f1_macro, type_f1_none]
+
+        # F1 Task C
+        source_modality_f1_macro = f1_score(np.array(source_modality_ground_truth),
+                                            torch.tensor(list_source_modality_outputs).numpy(), average="macro")
+        source_modality_f1_none = f1_score(np.array(source_modality_ground_truth),
+                                           torch.tensor(list_source_modality_outputs).numpy(), average=None)
+        source_modality_f1 = [source_modality_f1_macro, source_modality_f1_none]
+
+        print("Test F1 Binary: ", binary_f1)
+        print("Test F1 Type: ", type_f1)
+        print("Test F1 Source Modality: ", source_modality_f1)
+
+        # --------- Save results ---------
         df = pd.DataFrame({
             "names": names,
             "binary": list_binary_outputs,

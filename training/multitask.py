@@ -105,10 +105,14 @@ def _do_epoch(device, model, dataloader, loss_fn, train=False, optimizer=None, s
 
 def train_model(cfg, model, device, n_epochs, optimizer, scheduler, train_dataloader, val_dataloader,
                 path_dir_checkpoint, comet_exp):
-    type_weights = torch.Tensor(np.load("data/type_weights.npy")).to(device)
-    source_weights = torch.Tensor(np.load("data/source_weights.npy")).to(device)
-    loss_fn = MultitaskLossA(multitask_mod=cfg.MODEL.MULTITASK_MODALITY, type_weights=type_weights,
-                             source_weights=source_weights)
+    # Create the multitask loss
+    if cfg.TRAINING.BALANCED:
+        source_weights = torch.Tensor(np.load(cfg.PATH.FILE_SOURCE_WEIGHTS)).to(device)
+        type_weights = torch.Tensor(np.load(cfg.PATH.FILE_TYPE_WEIGHTS)).to(device)
+        loss_fn = MultitaskLossA(multitask_mod=cfg.MODEL.MULTITASK_MODALITY, type_weights=type_weights,
+                                 source_weights=source_weights, balanced=True)
+    else:
+        loss_fn = MultitaskLossA(multitask_mod=cfg.MODEL.MULTITASK_MODALITY, balanced=False)
 
     for epoch in range(0, n_epochs):
         print(f'Starting epoch {epoch + 1}')
