@@ -110,9 +110,9 @@ def train_model(cfg, model, device, n_epochs, optimizer, scheduler, train_datalo
         source_weights = torch.Tensor(np.load(cfg.PATH.FILE_SOURCE_WEIGHTS)).to(device)
         type_weights = torch.Tensor(np.load(cfg.PATH.FILE_TYPE_WEIGHTS)).to(device)
         loss_fn = MultitaskLossA(multitask_mod=cfg.MODEL.MULTITASK_MODALITY, type_weights=type_weights,
-                                 source_weights=source_weights, balanced=True)
+                                 source_weights=source_weights, balanced=True, consistencyAB = cfg.TRAINING.CONSISTENCY_AB, consistencyAC = cfg.TRAINING.CONSISTENCY_AC)
     else:
-        loss_fn = MultitaskLossA(multitask_mod=cfg.MODEL.MULTITASK_MODALITY, balanced=False)
+        loss_fn = MultitaskLossA(multitask_mod=cfg.MODEL.MULTITASK_MODALITY, balanced=False, consistencyAB = cfg.TRAINING.CONSISTENCY_AB, consistencyAC = cfg.TRAINING.CONSISTENCY_AC)
 
     for epoch in range(0, n_epochs):
         print(f'Starting epoch {epoch + 1}')
