@@ -52,7 +52,7 @@ if __name__ == "__main__":
                                      multitask_mod=cfg.MODEL.MULTITASK_MODALITY)
 
     # Create checkpoint directory if it does not exist
-    path_dir_checkpoint = os.path.join("data", f"checkpoints_{cfg.MODEL.TYPE}_{cfg.MODEL.MULTITASK_MODALITY[0]}_{cfg.MODEL.MULTITASK_MODALITY[1]}_{cfg.MODEL.MULTITASK_MODALITY[2]}")
+    path_dir_checkpoint = os.path.join("data", f"checkpoints_{cfg.MODEL.TYPE}_{cfg.MODEL.MULTITASK_MODALITY[0]}_{cfg.MODEL.MULTITASK_MODALITY[1]}_{cfg.MODEL.MULTITASK_MODALITY[2]}_{cfg.TRAINING.CONSISTENCY_AB}_{cfg.TRAINING.CONSISTENCY_AC}")
     if not os.path.isdir(path_dir_checkpoint):
         os.mkdir(path_dir_checkpoint)
     model.to(device)
