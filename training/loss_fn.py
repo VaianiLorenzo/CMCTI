@@ -6,7 +6,7 @@ import numpy as np
 
 class MultitaskLossA(nn.Module):
     def __init__(self, multitask_mod: list, type_weights: torch.Tensor = None, source_weights: torch.Tensor = None,
-                 alpha: float = 1, balanced: boolean = False):
+                 alpha: float = 1, balanced: boolean = False, consistencyAB = True, consistencyAC = True):
         super().__init__()
 
         assert multitask_mod != [0, 0, 0], "At least one modality must be active"
@@ -14,6 +14,8 @@ class MultitaskLossA(nn.Module):
         self.alpha = alpha
         self.balanced = balanced
         self.bce_fn = nn.BCEWithLogitsLoss()
+        self.consistencyAB = consistencyAB
+        self.consistencyAC = consistencyAC
         if balanced:
             self.bce_type_fn = [nn.BCEWithLogitsLoss(pos_weight=type_weights[0]),
                                 nn.BCEWithLogitsLoss(pos_weight=type_weights[1]),
@@ -46,7 +48,7 @@ class MultitaskLossA(nn.Module):
             loss += self.cross_entropy_fn(y_pred_source, y_true_source)
 
         # Consistency loss between task A and B
-        if self.multitask_mod[0] == 1 and self.multitask_mod[1] == 1:
+        if self.multitask_mod[0] == 1 and self.multitask_mod[1] == 1 and self.consistencyAB:
             pred_binary_class = torch.round(torch.sigmoid(y_pred_binary))
             pred_type_class = torch.round(torch.sigmoid(y_pred_type))
 
@@ -59,7 +61,7 @@ class MultitaskLossA(nn.Module):
             loss += self.alpha * consistency_loss
 
         # Consistency loss between task A and C
-        if self.multitask_mod[0] == 1 and self.multitask_mod[2] == 1:
+        if self.multitask_mod[0] == 1 and self.multitask_mod[2] == 1 and self.consistencyAC:
             pred_binary_class = torch.round(torch.sigmoid(y_pred_binary))
             pred_source_prob = torch.softmax(y_pred_source, dim=1)
             pred_source_class = torch.argmax(pred_source_prob, dim=1)
