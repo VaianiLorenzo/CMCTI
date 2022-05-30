@@ -34,7 +34,7 @@ _C.TRAINING = CN()
 _C.TRAINING.EPOCHS = 25
 _C.TRAINING.GAMMA = 1  # Gamma value for optimizer
 _C.TRAINING.LR = 1e-5
-_C.TRAINING.BALANCED = False
+_C.TRAINING.BALANCED = True
 
 _C.TEST = CN()
 _C.TEST.DIR_CHECKPOINTS = os.path.join("data", f"models")
