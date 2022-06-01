@@ -22,7 +22,6 @@ path_output_dir = os.path.join("data", "dataloaders")
 # Always use the same train/validation split
 random_state = 1995
 
-
 if __name__ == "__main__":
     cfg = read_config()
 
@@ -30,7 +29,9 @@ if __name__ == "__main__":
     if not os.path.isdir(path_output_dir):
         os.mkdir(path_output_dir)
 
-    names, text, misogynous, type_label, source = read_csv_data(cfg.PATH.FILE_TRAIN_DATASET, random_state=random_state)
+    names, text, misogynous, type_label, source = read_csv_data(cfg.PATH.FILE_TRAIN_DATASET,
+                                                                cfg.MODEL.USE_REDUNDANT_LABELS,
+                                                                random_state=random_state)
 
     if cfg.MODEL.TYPE == "base":
         text_model_name = "bert-base-cased"

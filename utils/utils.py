@@ -35,7 +35,7 @@ def read_config():
     return cfg
 
 
-def read_csv_data(path_dataset, random_state=None):
+def read_csv_data(path_dataset, use_redundant_labels: bool, random_state=None):
     df = pd.read_csv(path_dataset, sep=";")
     if random_state is not None:
         df = df.sample(frac=1, random_state=random_state)
@@ -50,7 +50,10 @@ def read_csv_data(path_dataset, random_state=None):
     text = list(df["Text Transcription"])
 
     # Construct type labels
-    type_label = df[["misogynous", "shaming", "stereotype", "objectification", "violence"]]
+    if use_redundant_labels:
+        type_label = df[["misogynous", "shaming", "stereotype", "objectification", "violence"]]
+    else:
+        type_label = df[["shaming", "stereotype", "objectification", "violence"]]
     type_label = type_label.to_numpy()
 
     # Construct source identification labels

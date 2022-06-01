@@ -1,8 +1,8 @@
 import logging
 import os
 
-import torch
 from comet_ml import Experiment
+import torch
 
 from models.model import MAMI_binary_model
 from models.vb_model import MAMI_vb_binary_model
@@ -23,7 +23,6 @@ path_output_dir = os.path.join("data", "dataloaders")
 
 if __name__ == "__main__":
     cfg = read_config()
-    print(f"checkpoints_{cfg.MODEL.TYPE}_{cfg.MODEL.MULTITASK_MODALITY[0]}_{cfg.MODEL.MULTITASK_MODALITY[1]}_{cfg.MODEL.MULTITASK_MODALITY[2]}")
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # device = "cpu"
@@ -49,7 +48,8 @@ if __name__ == "__main__":
     elif cfg.MODEL.TYPE == "multitask":
         model = MAMI_multitask_model(device=device, class_modality=cfg.MODEL.CLASS_MODALITY,
                                      maskr_modality=cfg.MODEL.MASKR_MODALITY,
-                                     multitask_mod=cfg.MODEL.MULTITASK_MODALITY)
+                                     multitask_mod=cfg.MODEL.MULTITASK_MODALITY,
+                                     use_redundant_labels=cfg.MODEL.USE_REDUNDANT_LABELS)
 
     # Create checkpoint directory if it does not exist
     path_dir_checkpoint = os.path.join("data", f"checkpoints_{cfg.MODEL.TYPE}_{cfg.MODEL.MULTITASK_MODALITY[0]}_{cfg.MODEL.MULTITASK_MODALITY[1]}_{cfg.MODEL.MULTITASK_MODALITY[2]}_{cfg.TRAINING.CONSISTENCY_AB}_{cfg.TRAINING.CONSISTENCY_AC}")

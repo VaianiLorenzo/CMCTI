@@ -13,7 +13,7 @@ from models.mlp import MLP
 class MAMI_multitask_model(nn.Module):
 
     def __init__(self, vb_model_name='uclanlp/visualbert-nlvr2-coco-pre', class_modality="cls", maskr_modality="coco",
-                 device=None, multitask_mod=[1, 1, 1]):
+                 device=None, multitask_mod=[1, 1, 1], use_redundant_labels=True):
         super().__init__()
 
         assert multitask_mod != [0, 0, 0], "At least one modality must be active"
@@ -69,7 +69,8 @@ class MAMI_multitask_model(nn.Module):
         self.source_classifier = MLP(input_dim=768, output_dim=5)
         self.source_classifier = self.source_classifier.to(device)
 
-        self.multilabel_classifier = MLP(input_dim=768, output_dim=5)
+        n_type_labels = 5 if use_redundant_labels else 4
+        self.multilabel_classifier = MLP(input_dim=768, output_dim=n_type_labels)
         self.multilabel_classifier = self.multilabel_classifier.to(device)
 
     def forward(self, x_text, x_image):

@@ -6,7 +6,7 @@ import torch
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss
 from tqdm import tqdm
 
-from training.loss_fn import MultitaskLossA
+from training.loss_fn import MultitaskLossA, MultitaskLossNoRedundancy
 from utils.metrics import binary_acc
 import torch.nn.functional as F
 
@@ -106,13 +106,19 @@ def _do_epoch(device, model, dataloader, loss_fn, train=False, optimizer=None, s
 def train_model(cfg, model, device, n_epochs, optimizer, scheduler, train_dataloader, val_dataloader,
                 path_dir_checkpoint, comet_exp):
     # Create the multitask loss
-    if cfg.TRAINING.BALANCED:
+    if not cfg.MODEL.USE_REDUNDANT_LABELS:
+        loss_fn = MultitaskLossNoRedundancy(multitask_mod=cfg.MODEL.MULTITASK_MODALITY,
+                                            consistencyAB=cfg.TRAINING.CONSISTENCY_AB,
+                                            consistencyAC=cfg.TRAINING.CONSISTENCY_AC)
+    elif cfg.TRAINING.BALANCED:
         source_weights = torch.Tensor(np.load(cfg.PATH.FILE_SOURCE_WEIGHTS)).to(device)
         type_weights = torch.Tensor(np.load(cfg.PATH.FILE_TYPE_WEIGHTS)).to(device)
         loss_fn = MultitaskLossA(multitask_mod=cfg.MODEL.MULTITASK_MODALITY, type_weights=type_weights,
-                                 source_weights=source_weights, balanced=True, consistencyAB = cfg.TRAINING.CONSISTENCY_AB, consistencyAC = cfg.TRAINING.CONSISTENCY_AC)
+                                 source_weights=source_weights, balanced=True,
+                                 consistencyAB=cfg.TRAINING.CONSISTENCY_AB, consistencyAC=cfg.TRAINING.CONSISTENCY_AC)
     else:
-        loss_fn = MultitaskLossA(multitask_mod=cfg.MODEL.MULTITASK_MODALITY, balanced=False, consistencyAB = cfg.TRAINING.CONSISTENCY_AB, consistencyAC = cfg.TRAINING.CONSISTENCY_AC)
+        loss_fn = MultitaskLossA(multitask_mod=cfg.MODEL.MULTITASK_MODALITY, balanced=False,
+                                 consistencyAB=cfg.TRAINING.CONSISTENCY_AB, consistencyAC=cfg.TRAINING.CONSISTENCY_AC)
 
     for epoch in range(0, n_epochs):
         print(f'Starting epoch {epoch + 1}')
