@@ -150,12 +150,15 @@ class MultitaskLossNoRedundancy(nn.Module):
 
         # Consistency loss between task B and C
         if self.multitask_mod[0] == 0 and self.multitask_mod[1] == 1 and self.multitask_mod[2] == 1:
-            pred_type_class = torch.round(torch.sigmoid(y_pred_type))
+            # no_grad() is required because any() is not differentiable and throws errors
+            with torch.no_grad():
+                # Infer the binary class from the predictions of class B
+                pred_type_class = torch.round(torch.sigmoid(y_pred_type)).any(dim=1).int()
             pred_source_prob = torch.softmax(y_pred_source, dim=1)
             pred_source_class = torch.argmax(pred_source_prob, dim=1)
 
             consistency_loss = 0
-            for type_c, source_c in zip(pred_type_class[:, 0], pred_source_class):
+            for type_c, source_c in zip(pred_type_class, pred_source_class):
                 if (type_c == 0 and source_c > 0) or (type_c > 0 and source_c == 0):
                     consistency_loss += 1
             consistency_loss = consistency_loss / len(pred_type_class)
