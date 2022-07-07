@@ -40,8 +40,8 @@ _C.TRAINING.CONSISTENCY_AB = True
 _C.TRAINING.CONSISTENCY_AC = True
 
 _C.TEST = CN()
-_C.TEST.DIR_CHECKPOINTS = os.path.join("data", f"models")
-_C.TEST.FILE_CHECKPOINT = "multitask_111_balanced.model"
+_C.TEST.DIR_CHECKPOINTS = os.path.join("data", f"models", "unbalanced-no-redundancy")
+_C.TEST.FILE_CHECKPOINT = "multitask_111_TF.model"
 
 
 def get_cfg_defaults():

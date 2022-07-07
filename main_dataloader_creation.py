@@ -131,27 +131,29 @@ if __name__ == "__main__":
     # ####################
     # # TEST DATALOADER #
     # ####################
-    # print("Creating test dataloader...")
-    #
-    # if cfg.MODEL.TYPE == "base" or cfg.MODEL.TYPE == "visual_bert":
-    #     df = pd.read_csv(cfg.PATH.FILE_TEST_DATASET, sep="\t")
-    #     images = list(df["file_name"])
-    #     for i in range(len(images)):
-    #         images[i] = os.path.join("data", "test", images[i])
-    #     texts = list(df["Text Transcription"])
-    #
-    #     if cfg.MODEL.TYPE == "base":
-    #         test_dataloader = MAMI_test_binary_dataset(texts, images, text_tokenizer, max_length=128)
-    #     elif cfg.MODEL.TYPE == "visual_bert":
-    #         test_dataloader = MAMI_test_vb_binary_dataset(texts, images, text_tokenizer, max_length=128)
-    # elif cfg.MODEL.TYPE == "multitask":
-    #     names, test_text, test_binary_label, test_type_label, test_source_label = read_csv_data(cfg.PATH.FILE_TEST_DATASET,
-    #                                                                                             random_state=None)
-    #     test_image_path = [os.path.join("data", "test", name) for name in names]
-    #     test_dataloader = MAMI_vb_multitask_dataset(test_text, test_image_path, text_tokenizer, test_binary_label,
-    #                                                 test_type_label, test_source_label, max_length=128)
-    #
-    # test_dataloader = DataLoader(test_dataloader, batch_size=cfg.DATALOADER.BATCH_SIZE, shuffle=True,
-    #                              num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=test_collate_fn,
-    #                              prefetch_factor=4)
-    # torch.save(test_dataloader, os.path.join(path_output_dir, f"test_{cfg.MODEL.TYPE}_dataloader.bkp"))
+    print("Creating test dataloader...")
+
+    if cfg.MODEL.TYPE == "base" or cfg.MODEL.TYPE == "visual_bert":
+        df = pd.read_csv(cfg.PATH.FILE_TEST_DATASET, sep="\t")
+        images = list(df["file_name"])
+        for i in range(len(images)):
+            images[i] = os.path.join("data", "test", images[i])
+        texts = list(df["Text Transcription"])
+
+        if cfg.MODEL.TYPE == "base":
+            test_dataloader = MAMI_test_binary_dataset(texts, images, text_tokenizer, max_length=128)
+        elif cfg.MODEL.TYPE == "visual_bert":
+            test_dataloader = MAMI_test_vb_binary_dataset(texts, images, text_tokenizer, max_length=128)
+    elif cfg.MODEL.TYPE == "multitask":
+        names, test_text, test_binary_label, test_type_label, test_source_label = read_csv_data(
+            cfg.PATH.FILE_TEST_DATASET,
+            cfg.MODEL.USE_REDUNDANT_LABELS,
+            random_state=None)
+        test_image_path = [os.path.join("data", "test", name) for name in names]
+        test_dataloader = MAMI_vb_multitask_dataset(test_text, test_image_path, text_tokenizer, test_binary_label,
+                                                    test_type_label, test_source_label, max_length=128)
+
+    test_dataloader = DataLoader(test_dataloader, batch_size=cfg.DATALOADER.BATCH_SIZE, shuffle=True,
+                                 num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=test_collate_fn,
+                                 prefetch_factor=4)
+    torch.save(test_dataloader, os.path.join(path_output_dir, f"test_{cfg.MODEL.TYPE}_dataloader.bkp"))

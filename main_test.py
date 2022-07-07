@@ -55,6 +55,9 @@ if __name__ == "__main__":
 
                 type_prob = torch.sigmoid(out_type)
                 type_pred = [sample_type_prob.round().int().tolist() for sample_type_prob in type_prob]
+                # When there is no redundant label in task B, the binary label is derived from the others
+                if not cfg.MODEL.USE_REDUNDANT_LABELS:
+                    list_type_misogyny.extend(torch.round(type_prob).any(dim=1).int().tolist())
 
                 source_prob = F.softmax(out_source, dim=1)
                 source_pred = [sp.tolist().index(max(sp.tolist())) for sp in source_prob]
@@ -62,11 +65,17 @@ if __name__ == "__main__":
                     names.append(os.path.basename(images[i]))
                     list_binary_outputs.append(out_binary[i][0])
 
-                    list_type_misogyny.append(type_pred[i][0])
-                    list_type_shaming.append(type_pred[i][1])
-                    list_type_stereotype.append(type_pred[i][2])
-                    list_type_objectification.append(type_pred[i][3])
-                    list_type_violence.append(type_pred[i][4])
+                    if cfg.MODEL.USE_REDUNDANT_LABELS:
+                        list_type_misogyny.append(type_pred[i][0])
+                        list_type_shaming.append(type_pred[i][1])
+                        list_type_stereotype.append(type_pred[i][2])
+                        list_type_objectification.append(type_pred[i][3])
+                        list_type_violence.append(type_pred[i][4])
+                    else:
+                        list_type_shaming.append(type_pred[i][0])
+                        list_type_stereotype.append(type_pred[i][1])
+                        list_type_objectification.append(type_pred[i][2])
+                        list_type_violence.append(type_pred[i][3])
 
                     list_source_modality_outputs.append(source_pred[i])
 
