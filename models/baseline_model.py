@@ -9,14 +9,15 @@ from models.mlp import MLP
 from transformers import AutoTokenizer, AutoModel
 
 
-class MAMI_binary_model(nn.Module):
+class baseline_model(nn.Module):
     def __init__(self, text_model_name="bert-base-cased", modality="multimodal",
-                 device=None, text_tokenizer=None):
+                 device=None, text_tokenizer=None, multitask_mod=[1, 1, 1], use_redundant_labels=True):
         super().__init__()
 
         self.device = device
         self.intermediate_embeddings_len = 0
         self.modality = modality
+        self.multitask_mod = multitask_mod
 
         # instantiate sBERT, with sBERT tokenizer
         if self.modality == "text" or self.modality == "multimodal":
@@ -43,9 +44,16 @@ class MAMI_binary_model(nn.Module):
             self.vgg_adapter = MLP(input_dim=25088, hidden_dim=4096, output_dim=2048)
             self.vgg_adapter = self.vgg_adapter.to(device)
 
-        # Instantiate MLP
-        self.mlp = MLP(input_dim=self.intermediate_embeddings_len, output_dim=1)
-        self.mlp = self.mlp.to(self.device)
+        # instantiate MLPs
+        self.binary_classifier = MLP(input_dim=self.intermediate_embeddings_len, output_dim=1)
+        self.binary_classifier = self.binary_classifier.to(self.device)
+
+        self.source_classifier = MLP(input_dim=self.intermediate_embeddings_len, output_dim=5)
+        self.source_classifier = self.source_classifier.to(device)
+
+        n_type_labels = 5 if use_redundant_labels else 4
+        self.multilabel_classifier = MLP(input_dim=self.intermediate_embeddings_len, output_dim=n_type_labels)
+        self.multilabel_classifier = self.multilabel_classifier.to(device)
 
     def forward(self, x_text, x_image):
 
@@ -79,8 +87,27 @@ class MAMI_binary_model(nn.Module):
         elif self.modality == "multimodal":
             overall_embedding = torch.cat((image_embeddings, sentence_embeddings), 1)
 
-        # pass to MLP
-        return torch.flatten(self.mlp(overall_embedding))
+        # Enable gradient calculation of each head only if the relative modality is enabled
+        if self.multitask_mod[0] == 1:
+            binary_pred = self.binary_classifier(overall_embedding)
+        else:
+            with torch.no_grad():
+                binary_pred = self.binary_classifier(overall_embedding)
+
+        if self.multitask_mod[1] == 1:
+            multilabel_pred = self.multilabel_classifier(overall_embedding)
+        else:
+            with torch.no_grad():
+                multilabel_pred = self.multilabel_classifier(overall_embedding)
+
+        if self.multitask_mod[2] == 1:
+            source_pred = self.source_classifier(overall_embedding)
+        else:
+            with torch.no_grad():
+                source_pred = self.source_classifier(overall_embedding)
+
+        return binary_pred, multilabel_pred, source_pred
+
 
     def image_mean_pooling(self, model_output):
         result = torch.sum(model_output, 0) / model_output.size()[0]

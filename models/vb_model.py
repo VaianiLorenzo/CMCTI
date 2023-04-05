@@ -10,20 +10,23 @@ from transformers import VisualBertModel
 from models.mlp import MLP
 
 
-class MAMI_vb_binary_model(nn.Module):
+class vb_model(nn.Module):
 
     def __init__(self, vb_model_name='uclanlp/visualbert-nlvr2-coco-pre', class_modality="cls", maskr_modality="coco",
-                 device=None, text_tokenizer=None
-                 ):
+                 device=None, multitask_mod=[1, 1, 1], use_redundant_labels=True, return_embeddings=False):
         super().__init__()
 
+        assert multitask_mod != [0, 0, 0], "At least one modality must be active"
+
+        if multitask_mod is None:
+            multitask_mod = [1, 1, 1]
         self.cfg_maskr_lvis = "LVISv0.5-InstanceSegmentation/mask_rcnn_R_101_FPN_1x.yaml"
         self.cfg_maskr_coco = "COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"
 
         self.device = device
+        self.multitask_mod = multitask_mod
         self.class_modality = class_modality
         self.maskr_modality = maskr_modality
-        # self.model = VisualBertForPreTraining.from_pretrained(vb_model_name)  # this checkpoint has 1024 dimensional visual embeddings projection
         self.visual_bert = VisualBertModel.from_pretrained(vb_model_name)
         self.visual_bert.to(self.device)
 
@@ -32,7 +35,8 @@ class MAMI_vb_binary_model(nn.Module):
             cfg = get_cfg()
             cfg.merge_from_file(model_zoo.get_config_file(cfg_path))
             cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # ROI HEADS SCORE THRESHOLD
-            # cfg['MODEL']['DEVICE'] = 'cpu' # if you are not using cuda
+            if device == "cpu":
+                cfg['MODEL']['DEVICE'] = 'cpu'  # if you are not using cuda
             cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(cfg_path)
 
             self.maskr_coco = build_model(cfg)
@@ -47,7 +51,8 @@ class MAMI_vb_binary_model(nn.Module):
             cfg = get_cfg()
             cfg.merge_from_file(model_zoo.get_config_file(cfg_path))
             cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # ROI HEADS SCORE THRESHOLD
-            # cfg['MODEL']['DEVICE'] = 'cpu' # if you are not using cuda
+            if device == "cpu":
+                cfg['MODEL']['DEVICE'] = 'cpu'
             cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(cfg_path)
 
             self.maskr_lvis = build_model(cfg)
@@ -57,9 +62,18 @@ class MAMI_vb_binary_model(nn.Module):
         else:
             self.maskr_lvis = None
 
-        # instantiate MLP
-        self.mlp = MLP(input_dim=768, output_dim=1)
-        self.mlp = self.mlp.to(self.device)
+        # instantiate MLPs
+        self.binary_classifier = MLP(input_dim=768, output_dim=1)
+        self.binary_classifier = self.binary_classifier.to(self.device)
+
+        self.source_classifier = MLP(input_dim=768, output_dim=5)
+        self.source_classifier = self.source_classifier.to(device)
+
+        n_type_labels = 5 if use_redundant_labels else 4
+        self.multilabel_classifier = MLP(input_dim=768, output_dim=n_type_labels)
+        self.multilabel_classifier = self.multilabel_classifier.to(device)
+
+        self.return_embeddings = return_embeddings
 
     def forward(self, x_text, x_image):
         visual_embeds = None
@@ -91,7 +105,8 @@ class MAMI_vb_binary_model(nn.Module):
             mask = [1] * len(visual_embeds[i])
             gap = 32 - len(visual_embeds[i])
             for _ in range(gap):
-                visual_embeds[i] = torch.cat((visual_embeds[i], torch.stack([torch.tensor([0] * 1024).to(self.device)])), 0)
+                visual_embeds[i] = torch.cat(
+                    (visual_embeds[i], torch.stack([torch.tensor([0] * 1024).to(self.device)])), 0)
                 mask.append(0)
 
             visual_attention_mask.append(torch.tensor(mask).to(self.device))
@@ -115,24 +130,45 @@ class MAMI_vb_binary_model(nn.Module):
         outputs_embeddings = outputs.last_hidden_state
 
         if self.class_modality == "cls":
-            cls_out_embeddings = outputs_embeddings[:, 0]
-            predictions = torch.flatten(self.mlp(cls_out_embeddings))
+            out_embeddings = outputs_embeddings[:, 0]
         else:
-            l = []
+            list_embed = []
             for i in range(len(outputs_embeddings)):
                 average = self.global_average_pooling(outputs_embeddings[i])
-                l.append(average)
-            out_embedding_avg = torch.stack(l)
+                list_embed.append(average)
+            out_embeddings = torch.stack(list_embed)
 
-            predictions = torch.flatten(self.mlp(out_embedding_avg))
+        # Enable gradient calculation of each head only if the relative modality is enabled
+        if self.multitask_mod[0] == 1:
+            binary_pred = self.binary_classifier(out_embeddings)
+        else:
+            with torch.no_grad():
+                binary_pred = self.binary_classifier(out_embeddings)
 
-        return predictions
+        if self.multitask_mod[1] == 1:
+            multilabel_pred = self.multilabel_classifier(out_embeddings)
+        else:
+            with torch.no_grad():
+                multilabel_pred = self.multilabel_classifier(out_embeddings)
+
+        if self.multitask_mod[2] == 1:
+            source_pred = self.source_classifier(out_embeddings)
+        else:
+            with torch.no_grad():
+                source_pred = self.source_classifier(out_embeddings)
+
+        if self.return_embeddings:
+            return binary_pred, multilabel_pred, source_pred, out_embeddings
+        else:
+            return binary_pred, multilabel_pred, source_pred
+
 
     def calculate_feats_patches(self, model, x_image):
         visual_embeds = []
 
         inputs = []
         for path in x_image:
+            # path = "../MAMI/" + path
             image = cv2.imread(path)
             height, width = image.shape[:2]
             image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))

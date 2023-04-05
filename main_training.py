@@ -4,12 +4,13 @@ import os
 from comet_ml import Experiment
 import torch
 
-from models.model import MAMI_binary_model
-from models.vb_model import MAMI_vb_binary_model
-from models.multitask_model import MAMI_multitask_model
+from models.vb_model import vb_model
+from models.clip_model import clip_model
+from models.baseline_model import baseline_model
 from utils.config import get_cfg_defaults
-from training.binary import train_model as train_binary
-from training.multitask import train_model as train_multitask
+from training.baseline import train_model as train_baseline
+from training.clip import train_model as train_clip
+from training.vb import train_model as train_vb
 from utils.utils import read_config
 
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -36,23 +37,40 @@ if __name__ == "__main__":
         )
 
     print("Loading train dataloader..")
-    train_dataloader = torch.load(os.path.join(path_output_dir, f"train_{cfg.MODEL.TYPE}_dataloader.bkp"))
+    if cfg.TRAINING.AUGMENTATION:
+        train_dataloader = torch.load(os.path.join(path_output_dir, f"augmentation_train_{cfg.MODEL.TYPE}_dataloader.bkp"))
+    else:
+        train_dataloader = torch.load(os.path.join(path_output_dir, f"train_{cfg.MODEL.TYPE}_dataloader.bkp"))
     print("Loading val dataloader..")
     val_dataloader = torch.load(os.path.join(path_output_dir, f"val_{cfg.MODEL.TYPE}_dataloader.bkp"))
 
-    if cfg.MODEL.TYPE == "base":
-        model = MAMI_binary_model(device=device, modality=cfg.MODEL.BASELINE_MODALITY)
+    if cfg.MODEL.TYPE == "baseline":
+        model = baseline_model(device=device, modality=cfg.MODEL.BASELINE_MODALITY,
+                                    multitask_mod=cfg.MODEL.MULTITASK_MODALITY,
+                                    use_redundant_labels=cfg.MODEL.USE_REDUNDANT_LABELS)
+        prefix = f"{cfg.MODEL.TYPE}_{cfg.MODEL.BASELINE_MODALITY}"
+    elif cfg.MODEL.TYPE == "clip-base" or cfg.MODEL.TYPE == "clip-large":
+        model = clip_model(device=device, multitask_mod=cfg.MODEL.MULTITASK_MODALITY,
+                                     use_redundant_labels=cfg.MODEL.USE_REDUNDANT_LABELS,
+                                     pretrained=cfg.MODEL.PRETRAINED,
+                                     model_name=cfg.MODEL.TYPE)
+        prefix = f"{cfg.MODEL.TYPE}"
     elif cfg.MODEL.TYPE == "visual_bert":
-        model = MAMI_vb_binary_model(device=device, class_modality=cfg.MODEL.CLASS_MODALITY,
-                                     maskr_modality=cfg.MODEL.MASKR_MODALITY)
-    elif cfg.MODEL.TYPE == "multitask":
-        model = MAMI_multitask_model(device=device, class_modality=cfg.MODEL.CLASS_MODALITY,
+        model = vb_model(device=device, class_modality=cfg.MODEL.CLASS_MODALITY,
                                      maskr_modality=cfg.MODEL.MASKR_MODALITY,
                                      multitask_mod=cfg.MODEL.MULTITASK_MODALITY,
                                      use_redundant_labels=cfg.MODEL.USE_REDUNDANT_LABELS)
+        prefix = f"{cfg.MODEL.TYPE}"
+    else:
+        raise Exception("Invalid model type")
+
+    if cfg.TRAINING.AUGMENTATION:
+        prefix = f"augmentation_{prefix}"
+    if cfg.MODEL.PRETRAINED:
+        prefix = f"pretrained_{prefix}"
 
     # Create checkpoint directory if it does not exist
-    path_dir_checkpoint = os.path.join("data", f"checkpoints_{cfg.MODEL.TYPE}_{cfg.MODEL.MULTITASK_MODALITY[0]}_{cfg.MODEL.MULTITASK_MODALITY[1]}_{cfg.MODEL.MULTITASK_MODALITY[2]}_{cfg.TRAINING.CONSISTENCY_AB}_{cfg.TRAINING.CONSISTENCY_AC}")
+    path_dir_checkpoint = os.path.join("data", "checkpoints", prefix + f"_{cfg.MODEL.MULTITASK_MODALITY[0]}{cfg.MODEL.MULTITASK_MODALITY[1]}{cfg.MODEL.MULTITASK_MODALITY[2]}_Loss{cfg.TRAINING.CONSISTENCY_AB}{cfg.TRAINING.CONSISTENCY_AC}_Bal{cfg.TRAINING.BALANCED}")
     if not os.path.isdir(path_dir_checkpoint):
         os.mkdir(path_dir_checkpoint)
     model.to(device)
@@ -71,11 +89,15 @@ if __name__ == "__main__":
                 cfg.TRAINING.GAMMA) + " - step_size: " + str(
                 percentage_epochs_per_step * cfg.TRAINING.EPOCHS) + " epochs\n")
 
-    if cfg.MODEL.TYPE == "base" or cfg.MODEL.TYPE == "visual_bert":
-        train_binary(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
-                     scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
-                     path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)
-    elif cfg.MODEL.TYPE == "multitask":
-        train_multitask(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
+    if cfg.MODEL.TYPE == "baseline":
+        train_baseline(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
+                        scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
+                        path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)
+    elif cfg.MODEL.TYPE == "clip-base" or cfg.MODEL.TYPE == "clip-large": 
+        train_clip(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
+                        scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
+                        path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)
+    elif cfg.MODEL.TYPE == "visual_bert":
+        train_vb(cfg=cfg, model=model, device=device, n_epochs=cfg.TRAINING.EPOCHS, optimizer=optimizer,
                         scheduler=scheduler, train_dataloader=train_dataloader, val_dataloader=val_dataloader,
                         path_dir_checkpoint=path_dir_checkpoint, comet_exp=experiment)

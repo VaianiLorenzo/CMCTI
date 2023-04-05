@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class MLP(nn.Module):
-    def __init__(self, input_dim, output_dim, dropout_value=0.25, hidden_dim=1536):
+    def __init__(self, input_dim, output_dim, dropout_value=0.25, hidden_dim=768):
         super().__init__()
         self.hidden_dim = hidden_dim
 

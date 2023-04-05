@@ -13,7 +13,7 @@ from models.mlp import MLP
 class MAMI_multitask_model(nn.Module):
 
     def __init__(self, vb_model_name='uclanlp/visualbert-nlvr2-coco-pre', class_modality="cls", maskr_modality="coco",
-                 device=None, multitask_mod=[1, 1, 1], use_redundant_labels=True):
+                 device=None, multitask_mod=[1, 1, 1], use_redundant_labels=True, return_embeddings=False):
         super().__init__()
 
         assert multitask_mod != [0, 0, 0], "At least one modality must be active"
@@ -72,6 +72,8 @@ class MAMI_multitask_model(nn.Module):
         n_type_labels = 5 if use_redundant_labels else 4
         self.multilabel_classifier = MLP(input_dim=768, output_dim=n_type_labels)
         self.multilabel_classifier = self.multilabel_classifier.to(device)
+
+        self.return_embeddings = return_embeddings
 
     def forward(self, x_text, x_image):
         visual_embeds = None
@@ -155,7 +157,11 @@ class MAMI_multitask_model(nn.Module):
             with torch.no_grad():
                 source_pred = self.source_classifier(out_embeddings)
 
-        return binary_pred, multilabel_pred, source_pred
+        if self.return_embeddings:
+            return binary_pred, multilabel_pred, source_pred, out_embeddings
+        else:
+            return binary_pred, multilabel_pred, source_pred
+
 
     def calculate_feats_patches(self, model, x_image):
         visual_embeds = []

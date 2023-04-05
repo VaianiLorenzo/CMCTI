@@ -3,7 +3,7 @@ from PIL import Image
 import numpy as np
 
 
-class MAMI_vb_multitask_dataset(data.Dataset):
+class vb_dataset(data.Dataset):
 
     def __init__(self, text, image_path, text_processor, binary_label, type_label, source_modality_label,
                  max_length=128):
