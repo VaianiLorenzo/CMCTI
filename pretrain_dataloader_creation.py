@@ -44,11 +44,15 @@ if __name__ == "__main__":
         train_text.append(text[i])
         train_source_label.append(source[i])
     
-    train_dataloader = pretrain_clip_dataset(train_text, train_image_path, processor, train_source_label, max_length=77)
+    train_dataloader = pretrain_clip_dataset(train_text, train_image_path, processor, train_source_label, max_length=77, isBinary = cfg.PRETRAINING.IS_BINARY)
     train_dataloader = DataLoader(train_dataloader, batch_size=cfg.DATALOADER.PRETRAINING_BATCH_SIZE, shuffle=True,
                                   num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=collate_fn,
                                   prefetch_factor=4)
-    torch.save(train_dataloader, os.path.join(path_output_dir, f"pretrain_train_clip_dataloader.bkp"))
+    
+    name = "pretrain_train_clip_dataloader.bkp"
+    if cfg.PRETRAINING.IS_BINARY:
+        name = "pretrain_train_clip_binary_dataloader.bkp"
+    torch.save(train_dataloader, os.path.join(path_output_dir, name))
     del train_dataloader
     gc.collect()
 
@@ -67,11 +71,15 @@ if __name__ == "__main__":
         val_text.append(text[i])
         val_source_label.append(source[i])
 
-    val_dataloader = pretrain_clip_dataset(val_text, val_image_path, processor, val_source_label, max_length=77)
+    val_dataloader = pretrain_clip_dataset(val_text, val_image_path, processor, val_source_label, max_length=77, isBinary = cfg.PRETRAINING.IS_BINARY)
     val_dataloader = DataLoader(val_dataloader, batch_size=cfg.DATALOADER.PRETRAINING_BATCH_SIZE, shuffle=True,
                                 num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=collate_fn,
                                 prefetch_factor=4)
-    torch.save(val_dataloader, os.path.join(path_output_dir, f"pretrain_val_clip_dataloader.bkp"))
+    
+    name = "pretrain_val_clip_dataloader.bkp"
+    if cfg.PRETRAINING.IS_BINARY:
+        name = "pretrain_val_clip_binary_dataloader.bkp"
+    torch.save(val_dataloader, os.path.join(path_output_dir, name))
 
     # ####################
     # # TEST DATALOADER #
@@ -83,8 +91,12 @@ if __name__ == "__main__":
             random_state=None)
     test_image_path = [os.path.join("data", "test", name) for name in names]
 
-    test_dataloader = pretrain_clip_dataset(test_text, test_image_path, processor, test_source_label, max_length=77)
+    test_dataloader = pretrain_clip_dataset(test_text, test_image_path, processor, test_source_label, max_length=77, isBinary = cfg.PRETRAINING.IS_BINARY)
     test_dataloader = DataLoader(test_dataloader, batch_size=cfg.DATALOADER.PRETRAINING_BATCH_SIZE, shuffle=True,
                                  num_workers=cfg.DATALOADER.N_WORKERS, pin_memory=True, collate_fn=test_collate_fn,
                                  prefetch_factor=4)
-    torch.save(test_dataloader, os.path.join(path_output_dir, f"pretrain_test_clip_dataloader.bkp"))
+    
+    name = "pretrain_test_clip_dataloader.bkp"
+    if cfg.PRETRAINING.IS_BINARY:
+        name = "pretrain_test_clip_binary_dataloader.bkp"
+    torch.save(test_dataloader, os.path.join(path_output_dir, name))

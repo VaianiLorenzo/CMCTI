@@ -51,6 +51,7 @@ def _do_epoch(device, model, dataloader, loss_fn, train=False, optimizer=None, s
                 second_embedding = torch.cat([second_text_features, second_image_features], 1)
 
         labels = torch.tensor(labels).to(device).float()
+        print("LABELS:", labels)
 
         loss = loss_fn(first_embedding, second_embedding, labels)
 
@@ -118,4 +119,3 @@ def pretrain_model(cfg, model, device, n_epochs, optimizer, scheduler, train_dat
     f = open(f"logs/pretraining_log.txt", "a+")
     f.write("\n________________\nBest model found at epoch" + str(best_epoch) +  "with a validation loss of: " + str(best_score) + "\n________________\n")
     f.close()
-

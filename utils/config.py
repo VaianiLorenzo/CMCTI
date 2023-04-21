@@ -19,7 +19,7 @@ _C.COMET.PROJECT_NAME = "mami"
 _C.COMET.WORKSPACE = "vaianilorenzo"
 
 _C.DATALOADER = CN()
-_C.DATALOADER.PRETRAINING_BATCH_SIZE = 64
+_C.DATALOADER.PRETRAINING_BATCH_SIZE = 2
 _C.DATALOADER.BATCH_SIZE = 16
 _C.DATALOADER.N_WORKERS = 8
 _C.DATALOADER.PERCENTAGE_TRAIN = 0.75
@@ -37,6 +37,7 @@ _C.PRETRAINING = CN()
 _C.PRETRAINING.EPOCHS = 300
 _C.PRETRAINING.GAMMA = 1.0  # Gamma value for optimizer
 _C.PRETRAINING.LR = 1e-5
+_C.PRETRAINING.IS_BINARY = True
 
 _C.TRAINING = CN()
 _C.TRAINING.EPOCHS = 25
@@ -51,7 +52,7 @@ _C.TEST = CN()
 #_C.TEST.DIR_CHECKPOINTS = os.path.join("data", "checkpoints", "visual_bert_001_LossTrueTrue_BalFalse")
 _C.TEST.DIR_CHECKPOINTS = os.path.join("data", "checkpoints", "augmentation_clip-base_101_LossTrueTrue_BalFalse")
 _C.TEST.FILE_CHECKPOINT = "best.model"
-_C.TEST.RETURN_EMBEDDINGS = False
+_C.TEST.RETURN_EMBEDDINGS = True
 
 
 def get_cfg_defaults():
